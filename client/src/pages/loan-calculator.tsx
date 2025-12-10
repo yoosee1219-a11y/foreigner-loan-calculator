@@ -651,12 +651,15 @@ function BankResultCard({
         {/* 엔비코리아 중개 수수료 */}
         <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border-2 border-purple-200">
           <div className="flex items-center justify-between">
-            <span className="font-medium text-purple-900">💼 엔비코리아 중개 수수료 (2.5%)</span>
+            <span className="font-medium text-purple-900">💼 엔비코리아 중개 수수료</span>
             <span className="text-xl font-bold text-purple-600">
-              {Math.round((result.receivedAmount + result.finalFee) * 0.025).toLocaleString()}원
+              {result.finalFee.toLocaleString()}원
             </span>
           </div>
-          <p className="text-xs text-purple-600 mt-1">대출 금액 기준 2.5%</p>
+          <p className="text-xs text-purple-600 mt-1">
+            {result.feeRate}
+            {result.bank === 'welcome' && months < 12 && ' (12개월 미만: 50% 지급)'}
+          </p>
         </div>
 
         <Separator />

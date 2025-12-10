@@ -85,17 +85,17 @@ export const WELCOME_RATE_OPTIONS: WelcomeRateOption[] = [
   { discount: 3, feeMultiplier: 0.7, label: '3% 인하 (수수료 70%)' },
 ];
 
-// 전북은행 수수료 테이블 (신용대출 기준)
-const JEONBUK_FEE_TABLE = [
-  { maxMonths: 6, rate: 0.0024 },   // 6개월 미만: 0.24%
-  { maxMonths: 12, rate: 0.004 },   // 6개월~12개월: 0.4%
-  { maxMonths: 15, rate: 0.008 },   // 12개월~15개월: 0.8%
-  { maxMonths: 18, rate: 0.012 },   // 15개월~18개월: 1.2%
-  { maxMonths: 21, rate: 0.0136 },  // 18개월~21개월: 1.36%
-  { maxMonths: 24, rate: 0.0152 },  // 21개월~24개월: 1.52%
-  { maxMonths: 27, rate: 0.0168 },  // 24개월~27개월: 1.68%
-  { maxMonths: 30, rate: 0.0184 },  // 27개월~30개월: 1.84%
-  { maxMonths: 999, rate: 0.02 },   // 30개월 이상: 2.0%
+// 전북은행 중개 수수료 테이블 (슬라이딩 방식)
+const JEONBUK_BROKER_FEE_TABLE = [
+  { maxMonths: 6, rate: 0.003 },   // 6개월 미만: 0.3%
+  { maxMonths: 12, rate: 0.005 },  // 12개월 미만: 0.5%
+  { maxMonths: 15, rate: 0.01 },   // 15개월 미만: 1.0%
+  { maxMonths: 18, rate: 0.015 },  // 18개월 미만: 1.5%
+  { maxMonths: 21, rate: 0.017 },  // 21개월 미만: 1.7%
+  { maxMonths: 24, rate: 0.019 },  // 24개월 미만: 1.9%
+  { maxMonths: 27, rate: 0.021 },  // 27개월 미만: 2.1%
+  { maxMonths: 30, rate: 0.023 },  // 30개월 미만: 2.3%
+  { maxMonths: 999, rate: 0.025 }, // 30개월 이상: 2.5%
 ];
 
 // 기본 금리 (가정)
@@ -106,11 +106,19 @@ const DEFAULT_JEONBUK_RATE = 14.5;
 // 웰컴저축은행 계산
 // ============================================================================
 
-export function calculateWelcomeFee(amount: number): number {
+/**
+ * 웰컴저축은행 중개 수수료 계산
+ * - 500만원 이하: 3.0%
+ * - 500만원 초과: 500만원까지 3.0% + 초과분 2.25% + 15만원
+ */
+export function calculateWelcomeBrokerFee(amount: number): number {
   if (amount <= 5000000) {
-    return amount * 0.03; // 3%
+    return Math.round(amount * 0.03); // 3%
   } else {
-    return amount * 0.0225 + 150000; // 2.25% + 15만원
+    // 500만원까지 3% + 초과분 2.25% + 15만원
+    const first5M = 5000000 * 0.03;
+    const over5M = (amount - 5000000) * 0.0225;
+    return Math.round(first5M + over5M + 150000);
   }
 }
 
@@ -120,8 +128,8 @@ export function calculateWelcomeLoan(
   rateDiscount: number = 0,
   baseRate: number = DEFAULT_WELCOME_RATE
 ): LoanResult {
-  // 1. 기본 수수료 계산
-  const baseFee = calculateWelcomeFee(amount);
+  // 1. 기본 중개 수수료 계산
+  const baseFee = calculateWelcomeBrokerFee(amount);
 
   // 2. 금리 인하 옵션 적용
   const option = WELCOME_RATE_OPTIONS.find(opt => opt.discount === rateDiscount);
@@ -129,8 +137,14 @@ export function calculateWelcomeLoan(
     throw new Error(`Invalid rate discount: ${rateDiscount}`);
   }
 
-  // 3. 최종 수수료 (할인 적용)
-  const finalFee = Math.round(baseFee * option.feeMultiplier);
+  // 3. 최종 중개 수수료 (금리 인하에 따른 수수료 배율 적용)
+  let finalFee = Math.round(baseFee * option.feeMultiplier);
+  
+  // 4. 대출기간 12개월 미만 시 정상지급액의 50%만 지급
+  if (months < 12) {
+    finalFee = Math.round(finalFee * 0.5);
+  }
+  
   const feeDiscount = baseFee - finalFee;
 
   // 4. 실수령액
@@ -147,13 +161,19 @@ export function calculateWelcomeLoan(
   const totalInterest = totalPayment - amount;
   const totalCost = finalFee + totalInterest;
 
-  // 8. 경고 메시지
+  // 8. 경고 메시지  
   const warnings: string[] = [];
-  if (months <= 3) {
-    warnings.push('⚠️ 3개월 이내 중도상환 시 수수료 100% 환수');
-  } else if (months < 12) {
-    warnings.push('⚠️ 12개월 미만 중도상환 시 수수료 50% 환수');
+  
+  if (months < 12) {
+    warnings.push('📌 대출기간 12개월 미만: 정상지급액의 50%만 수수료 지급');
   }
+  
+  warnings.push('');
+  warnings.push('🔴 환수 조건:');
+  warnings.push('   • 3개월 이내 중도상환(완납) 시: 수수료 100% 환수');
+  warnings.push('   • 3개월 이내 부분상환 시:');
+  warnings.push('     - 3회차 약정 상환액 외 50만원 이상 상환 시');
+  warnings.push('     - 부분 상환액만큼 미지급');
 
   // 수수료율 표시
   let feeRate = '';
@@ -189,7 +209,7 @@ export function calculateWelcomeLoan(
 // ============================================================================
 
 export function calculateJeonbukFee(amount: number, months: number): { fee: number; rate: number } {
-  for (const bracket of JEONBUK_FEE_TABLE) {
+  for (const bracket of JEONBUK_BROKER_FEE_TABLE) {
     if (months < bracket.maxMonths) {
       return {
         fee: Math.round(amount * bracket.rate),
