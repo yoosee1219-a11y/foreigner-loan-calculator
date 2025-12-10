@@ -669,9 +669,20 @@ function BankResultCard({
             <AlertTitle>주의사항</AlertTitle>
             <AlertDescription>
               <ul className="list-disc list-inside space-y-1">
-                {result.warnings.map((warning, idx) => (
-                  <li key={idx}>{warning}</li>
-                ))}
+                {result.warnings.map((warning, idx) => {
+                  // 색상 구분: 🔴 = 빨강, ⚠️ = 주황
+                  const colorClass = warning.includes('🔴')
+                    ? 'text-red-600 font-semibold'
+                    : warning.includes('⚠️')
+                    ? 'text-orange-600 font-medium'
+                    : '';
+
+                  return (
+                    <li key={idx} className={colorClass}>
+                      {warning}
+                    </li>
+                  );
+                })}
               </ul>
             </AlertDescription>
           </Alert>

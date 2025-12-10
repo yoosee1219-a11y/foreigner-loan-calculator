@@ -196,8 +196,8 @@ export function calculateWelcomeLoan(
   
   // 12개월 미만 50% 규칙
   if (months < 12) {
-    feeRate += '
-→ 12개월 미만: 50% 지급';
+    feeRate += `
+→ 12개월 미만: 50% 지급`;
   }
 
   return {
