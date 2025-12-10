@@ -1,0 +1,30 @@
+User-agent: *
+Allow: /
+
+# API 엔드포인트는 크롤링 제외
+Disallow: /api/
+
+# 관리자 페이지 (추후 있을 경우)
+Disallow: /admin/
+
+# 잘못된 언어 경로 제외 (나중에 번역 기능 추가 시 제거)
+# 현재 프로젝트는 한국어만 지원하므로 언어 경로는 존재하지 않음
+Disallow: /en/
+Disallow: /ru/
+Disallow: /zh/
+Disallow: /th/
+Disallow: /vi/
+Disallow: /uz/
+Disallow: /mn/
+Disallow: /ne/
+Disallow: /tl/
+Disallow: /id/
+Disallow: /ko/
+
+# 동적 생성 페이지는 크롤링 허용 (요금제, 꿀팁 등)
+Allow: /plans/
+Allow: /tips/
+
+# Sitemap 위치
+Sitemap: https://koreausimguide.com/sitemap.xml
+
