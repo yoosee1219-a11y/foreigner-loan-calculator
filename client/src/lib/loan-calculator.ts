@@ -52,6 +52,16 @@ export interface LoanResult {
   // 추가 수수료
   earlyPaymentFee?: number; // 중도상환수수료
 
+  // 전북은행 6개월 이내 중도상환 환수액 (일수별)
+  earlyRepaymentClawback?: {
+    days30: number;   // 30일 사용 후 전액 상환 시
+    days60: number;   // 60일 사용 후 전액 상환 시
+    days90: number;   // 90일 사용 후 전액 상환 시
+    days120: number;  // 120일 사용 후 전액 상환 시
+    days150: number;  // 150일 사용 후 전액 상환 시
+    days180: number;  // 180일 사용 후 전액 상환 시
+  };
+
   // 경고
   warnings: string[];
 }
@@ -221,15 +231,38 @@ export function calculateJeonbukLoan(
   // 6. 총 비용 계산 (수수료는 제외 - 중개사 수익)
   const totalCost = totalInterest; // 고객 부담: 이자만
 
-  // 7. 경고 메시지
+  // 7. 6개월 이내 중도상환 환수액 계산
+  let earlyRepaymentClawback = undefined;
+  if (months <= 6) {
+    // 전액 상환 기준으로 일수별 환수액 계산
+    earlyRepaymentClawback = {
+      days30: calculateJeonbukEarlyRepaymentClawback(amount, rate, 30),
+      days60: calculateJeonbukEarlyRepaymentClawback(amount, rate, 60),
+      days90: calculateJeonbukEarlyRepaymentClawback(amount, rate, 90),
+      days120: calculateJeonbukEarlyRepaymentClawback(amount, rate, 120),
+      days150: calculateJeonbukEarlyRepaymentClawback(amount, rate, 150),
+      days180: calculateJeonbukEarlyRepaymentClawback(amount, rate, 180),
+    };
+  }
+
+  // 8. 경고 메시지
   const warnings: string[] = [];
   warnings.push('🔴 대출 실행 후 1회차 연체 시 수수료 100% 환수');
   warnings.push('🔴 대출 실행 후 2회차 연체 시 수수료 50% 환수');
-  if (months <= 6) {
-    const clawbackAmount = Math.round(finalFee - (finalFee * 30 / 183)); // 예시: 30일 사용 가정
-    warnings.push(`🟠 6개월 이내 중도상환 시 환수 (예: 30일 사용 기준 약 ${clawbackAmount.toLocaleString()}원)`);
+  warnings.push('⚠️ 14일 이내 대출 취소/철회 시 수수료 100% 환수');
+  
+  if (months <= 6 && earlyRepaymentClawback) {
+    warnings.push('');
+    warnings.push('🟠 6개월 이내 중도상환 시 환수액 (전액 상환 기준):');
+    warnings.push(`   • 30일 사용: ${earlyRepaymentClawback.days30.toLocaleString()}원`);
+    warnings.push(`   • 60일 사용: ${earlyRepaymentClawback.days60.toLocaleString()}원`);
+    warnings.push(`   • 90일 사용: ${earlyRepaymentClawback.days90.toLocaleString()}원`);
+    warnings.push(`   • 120일 사용: ${earlyRepaymentClawback.days120.toLocaleString()}원`);
+    warnings.push(`   • 150일 사용: ${earlyRepaymentClawback.days150.toLocaleString()}원`);
+    warnings.push(`   • 180일 사용: ${earlyRepaymentClawback.days180.toLocaleString()}원`);
+    warnings.push('   * 공식: 중도상환액 × 수수료율 - (중도상환액 × 수수료율 × 이용일수/183)');
+    warnings.push('   * 정기상환 제외, 일부상환·완제·상환계획변경·회차선납 포함');
   }
-  warnings.push(`⚠️ 14일 이내 대출 취소/철회 시 수수료 100% 환수`);
 
   // 수수료율 표시
   const feeRate = `${(rate * 100).toFixed(2)}% (${months}개월 기준)`;
@@ -248,6 +281,7 @@ export function calculateJeonbukLoan(
     totalInterest,
     totalPayment,
     totalCost,
+    earlyRepaymentClawback,
     warnings,
   };
 }
@@ -276,6 +310,26 @@ export function calculateMonthlyPayment(
     (Math.pow(1 + monthlyRate, months) - 1);
 
   return Math.round(payment);
+}
+
+
+/**
+ * 전북은행 6개월 이내 중도상환 환수액 계산
+ * 공식: 중도상환액 × 지급수수료율 - (중도상환액 × 지급수수료율 × 이용일수 / 183)
+ * 
+ * @param repaymentAmount 중도상환액
+ * @param feeRate 지급수수료율
+ * @param usageDays 이용일수
+ * @returns 환수액
+ */
+export function calculateJeonbukEarlyRepaymentClawback(
+  repaymentAmount: number,
+  feeRate: number,
+  usageDays: number
+): number {
+  // 환수액 = 중도상환액 × 지급수수료율 × (1 - 이용일수/183)
+  const clawback = repaymentAmount * feeRate * (1 - usageDays / 183);
+  return Math.round(clawback);
 }
 
 /**
