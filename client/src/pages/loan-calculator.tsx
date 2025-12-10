@@ -661,18 +661,6 @@ function BankResultCard({
           </p>
         </div>
 
-        <Separator />
-
-        {/* 총 비용 */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <span className="font-medium">💰 총 비용</span>
-            <span className="text-2xl font-bold text-primary">
-              {result.totalCost.toLocaleString()}원
-            </span>
-          </div>
-          <p className="text-xs text-gray-600 mt-1">수수료 + 이자 + 중도상환수수료</p>
-        </div>
 
         {/* 경고 */}
         {result.warnings.length > 0 && (

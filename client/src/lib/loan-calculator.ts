@@ -175,18 +175,29 @@ export function calculateWelcomeLoan(
   warnings.push('     - 3회차 약정 상환액 외 50만원 이상 상환 시');
   warnings.push('     - 부분 상환액만큼 미지급');
 
-  // 수수료율 표시
+  // 수수료율 표시 (상세)
   let feeRate = '';
   if (amount <= 5000000) {
-    feeRate = '3.0%';
+    feeRate = `${amount.toLocaleString()}원 × 3.0%`;
   } else {
-    feeRate = '2.25% + 15만원';
+    // 500만원 초과 시 상세 분할 표시
+    const first5M = 5000000 * 0.03;
+    const over5M = (amount - 5000000) * 0.0225;
+    feeRate = `500만원 이하분 3.0% + 초과분 2.25% + 15만원
+`;
+    feeRate += `= ${first5M.toLocaleString()}원 + ${over5M.toLocaleString()}원 + 150,000원`;
   }
+  
+  // 금리 인하 옵션 적용 표시
   if (option.discount > 0) {
-    feeRate += ` → ${Math.round(option.feeMultiplier * 100)}% 적용`;
+    feeRate += `
+→ ${option.discount}% 금리인하: ${Math.round(option.feeMultiplier * 100)}% 지급`;
   }
+  
+  // 12개월 미만 50% 규칙
   if (months < 12) {
-    feeRate += ' (12개월 미만: 50% 지급)';
+    feeRate += '
+→ 12개월 미만: 50% 지급';
   }
 
   return {
