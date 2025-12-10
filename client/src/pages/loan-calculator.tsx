@@ -658,7 +658,6 @@ function BankResultCard({
           </div>
           <p className="text-xs text-purple-600 mt-1">
             {result.feeRate}
-            {result.bank === 'welcome' && months < 12 && ' (12개월 미만: 50% 지급)'}
           </p>
         </div>
 

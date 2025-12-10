@@ -185,6 +185,9 @@ export function calculateWelcomeLoan(
   if (option.discount > 0) {
     feeRate += ` → ${Math.round(option.feeMultiplier * 100)}% 적용`;
   }
+  if (months < 12) {
+    feeRate += ' (12개월 미만: 50% 지급)';
+  }
 
   return {
     bank: 'welcome',
