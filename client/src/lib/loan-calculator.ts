@@ -75,17 +75,17 @@ export const WELCOME_RATE_OPTIONS: WelcomeRateOption[] = [
   { discount: 3, feeMultiplier: 0.7, label: '3% 인하 (수수료 70%)' },
 ];
 
-// 전북은행 수수료 테이블 (Sliding 방식)
+// 전북은행 수수료 테이블 (신용대출 기준)
 const JEONBUK_FEE_TABLE = [
-  { maxMonths: 6, rate: 0.003 },   // 6개월 미만: 0.3%
-  { maxMonths: 12, rate: 0.005 },  // 12개월 미만: 0.5%
-  { maxMonths: 15, rate: 0.01 },   // 15개월 미만: 1.0%
-  { maxMonths: 18, rate: 0.015 },  // 18개월 미만: 1.5%
-  { maxMonths: 21, rate: 0.0175 }, // 21개월 미만: 1.75%
-  { maxMonths: 24, rate: 0.02 },   // 24개월 미만: 2.0%
-  { maxMonths: 27, rate: 0.0225 }, // 27개월 미만: 2.25%
-  { maxMonths: 30, rate: 0.025 },  // 30개월 미만: 2.5%
-  { maxMonths: 999, rate: 0.025 }, // 30개월 이상: 2.5%
+  { maxMonths: 6, rate: 0.0024 },   // 6개월 미만: 0.24%
+  { maxMonths: 12, rate: 0.004 },   // 6개월~12개월: 0.4%
+  { maxMonths: 15, rate: 0.008 },   // 12개월~15개월: 0.8%
+  { maxMonths: 18, rate: 0.012 },   // 15개월~18개월: 1.2%
+  { maxMonths: 21, rate: 0.0136 },  // 18개월~21개월: 1.36%
+  { maxMonths: 24, rate: 0.0152 },  // 21개월~24개월: 1.52%
+  { maxMonths: 27, rate: 0.0168 },  // 24개월~27개월: 1.68%
+  { maxMonths: 30, rate: 0.0184 },  // 27개월~30개월: 1.84%
+  { maxMonths: 999, rate: 0.02 },   // 30개월 이상: 2.0%
 ];
 
 // 기본 금리 (가정)
@@ -218,17 +218,18 @@ export function calculateJeonbukLoan(
   const totalPayment = monthlyPayment * months;
   const totalInterest = totalPayment - amount;
 
-  // 6. 중도상환수수료 (0.77%)
-  const earlyPaymentFee = Math.round(amount * 0.0077);
-
-  const totalCost = finalFee + totalInterest + earlyPaymentFee;
+  // 6. 총 비용 계산 (수수료는 제외 - 중개사 수익)
+  const totalCost = totalInterest; // 고객 부담: 이자만
 
   // 7. 경고 메시지
   const warnings: string[] = [];
+  warnings.push('🔴 대출 실행 후 1회차 연체 시 수수료 100% 환수');
+  warnings.push('🔴 대출 실행 후 2회차 연체 시 수수료 50% 환수');
   if (months <= 6) {
-    warnings.push('⚠️ 6개월 이내 중도상환 시 복잡한 환수 조건 적용');
+    const clawbackAmount = Math.round(finalFee - (finalFee * 30 / 183)); // 예시: 30일 사용 가정
+    warnings.push(`🟠 6개월 이내 중도상환 시 환수 (예: 30일 사용 기준 약 ${clawbackAmount.toLocaleString()}원)`);
   }
-  warnings.push(`💡 중도상환수수료 0.77% (약 ${earlyPaymentFee.toLocaleString()}원)`);
+  warnings.push(`⚠️ 14일 이내 대출 취소/철회 시 수수료 100% 환수`);
 
   // 수수료율 표시
   const feeRate = `${(rate * 100).toFixed(2)}% (${months}개월 기준)`;
@@ -247,7 +248,6 @@ export function calculateJeonbukLoan(
     totalInterest,
     totalPayment,
     totalCost,
-    earlyPaymentFee,
     warnings,
   };
 }
