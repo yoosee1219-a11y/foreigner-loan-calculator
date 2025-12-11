@@ -181,11 +181,7 @@ export function calculateWelcomeLoan(
     feeRate = `${amount.toLocaleString()}원 × 3.0%`;
   } else {
     // 500만원 초과 시 상세 분할 표시
-    const first5M = 5000000 * 0.03;
-    const over5M = (amount - 5000000) * 0.0225;
-    feeRate = `500만원 이하분 3.0% + 초과분 2.25% + 15만원
-`;
-    feeRate += `= ${first5M.toLocaleString()}원 + ${over5M.toLocaleString()}원 + 150,000원`;
+    feeRate = `500만원 이하분 3.0%, 초과분 2.25% + 15만원`;
   }
   
   // 금리 인하 옵션 적용 표시
