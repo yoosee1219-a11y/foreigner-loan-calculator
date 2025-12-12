@@ -393,7 +393,7 @@ function ComparisonView({
                     <td className="px-4 py-2">
                       {idx === 0 ? '기본' : `${idx}% 인하`}
                     </td>
-                    <td className="px-4 py-2 text-right">{opt.appliedRate}%</td>
+                    <td className="px-4 py-2 text-right">{opt.appliedRate.toFixed(1)}%</td>
                     <td className="px-4 py-2 text-right">
                       {opt.finalFee.toLocaleString()}원
                     </td>
@@ -480,7 +480,7 @@ function SingleBankView({
                 <div key={idx} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                   <div>
                     <div className="font-medium">
-                      {idx === 0 ? '기본' : `${idx}% 인하`} - {opt.appliedRate}%
+                      {idx === 0 ? '기본' : `${idx}% 인하`} - {opt.appliedRate.toFixed(1)}%
                     </div>
                     <div className="text-sm text-gray-600">
                       월 {opt.monthlyPayment.toLocaleString()}원
@@ -641,7 +641,7 @@ function BankResultCard({
           <InfoItem label="대출 수수료" value={`${result.finalFee.toLocaleString()}원`} />
           <InfoItem label="수수료율" value={result.feeRate} />
           <InfoItem label="실수령액" value={`${result.receivedAmount.toLocaleString()}원`} />
-          <InfoItem label="적용 금리" value={`${result.appliedRate}%`} />
+          <InfoItem label="적용 금리" value={`${result.appliedRate.toFixed(1)}%`} />
           <InfoItem label="월 납입액" value={`${result.monthlyPayment.toLocaleString()}원`} highlight />
           <InfoItem label="총 이자" value={`${result.totalInterest.toLocaleString()}원`} />
         </div>
